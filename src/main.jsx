@@ -1,14 +1,14 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
- 
+
 import {
   createBrowserRouter,
   RouterProvider,
 } from "react-router";
- 
-import Home from './components/Home/Home.jsx';
- 
+
+import Home from './components/PublicHome/PublicHome.jsx';
+
 import Root from './components/Root/Root.jsx';
 import Dashboard from './components/Dashboard/Dashboard.jsx';
 import ErrorPage from './components/ErrorPage/ErrorPage.jsx';
@@ -19,48 +19,57 @@ import Reports from './components/Reports/Reports.jsx';
 import Contact from './components/Contact/Contact.jsx';
 import AboutUs from './components/AboutUs/AboutUs.jsx';
 import Services from './components/Services/Services.jsx';
+import CreateTask from './components/CreateTask/CreateTask.jsx';
+import LandingLayout from './components/LandingLayout/LandingLayout.jsx';
+import SignUp from './components/SignUp/SignUp.jsx';
+import Login from './components/Login/Login.jsx';
 
 const router = createBrowserRouter([
+
+
   {
     path: "/",
-    Component:Root, 
+    Component: LandingLayout,
     errorElement: <ErrorPage></ErrorPage>,
-    children:[
+    children: [
+      { index: true, Component: Home },
+
+      { path: "contact-us", Component: Contact },
+      { path: "signup", Component: SignUp },
+      { path: "login", Component: Login }
+    ],
+  },
+  {
+    path: "/app",
+    Component: Root,
+    errorElement: <ErrorPage></ErrorPage>,
+    children: [
+      { path: "about-us", Component: AboutUs },
+      { path: "services", Component: Services },
+
       {
-        index:true,
-        Component:Home
+        path: "dashboard",
+        Component: Dashboard
       },
       {
-        path:"/about-us",
-        Component:AboutUs
+        path: "tasks",
+        Component: Tasks
       },
       {
-        path:"/services",
-        Component:Services
+        path: "profile",
+        Component: Profile
       },
       {
-        path:"/contact-us",
-        Component:Contact
+        path: "leaderboard",
+        Component: Leaderboard
       },
       {
-        path:"/dashboard",
-        Component:Dashboard
+        path: "reports",
+        Component: Reports
       },
       {
-        path:"/tasks",
-        Component:Tasks
-      },
-      {
-        path:"/profile",
-        Component:Profile
-      },
-      {
-        path:"/leaderboard",
-        Component:Leaderboard
-      },
-      {
-        path:"/reports",
-        Component:Reports
+        path: "tasks/create",
+        Component: CreateTask
       }
     ]
   }
@@ -68,6 +77,6 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-     <RouterProvider router={router} />
+    <RouterProvider router={router} />
   </StrictMode>,
 )
