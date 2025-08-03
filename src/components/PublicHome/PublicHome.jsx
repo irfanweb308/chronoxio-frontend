@@ -13,7 +13,7 @@ const PublicHome = () => {
                 }}
             >
                 <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between">
-                    <div className="lg:w-1/2 space-y-6 mb-10 lg:mb-0">
+                    <div className="lg:w-1/2 space-y-6 mb-10 lg:mb-0 text-shadow-lg">
                         <span className="text-purple-600 font-bold">#1 Productivity App</span>
                         <h1 className="text-5xl font-extrabold leading-tight text-white" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.7)' }}>
                             See why teams choose <br />
@@ -24,7 +24,7 @@ const PublicHome = () => {
                         </p>
                         <div className="flex gap-4">
                             <Link
-                                to="/app"
+                                to="/app/dashboard"
                                 className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
                             >
                                 Get Started

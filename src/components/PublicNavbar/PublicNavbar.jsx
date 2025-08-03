@@ -6,11 +6,14 @@ const PublicNavBar = () => {
     <nav className="flex justify-between items-center p-4 border border-base-100 bg-gray-200">
        
       <div className="text-2xl font-bold text-blue-600">
-        <span className="animated-rgb-text font-bold">Chronoxio</span>
+        <span className="animated-rgb-text font-bold text-3xl">Chronoxio</span>
       </div>
 
        
       <div className="space-x-6 flex items-center">
+        <Link to="/services" className="text-gray-600 hover:text-blue-600">
+          Services
+        </Link>
         <Link to="/contact-us" className="text-gray-600 hover:text-blue-600">
           Contact Us
         </Link>

@@ -2,17 +2,40 @@
 @plugin "daisyui";
 
 
-  @keyframes rgbFlow {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+@keyframes rgbFlow {
+  0% {
+    background-position: 0% 50%;
   }
 
-  .animated-rgb-text {
-    background: linear-gradient(270deg, #ff00c8, #00e0ff, #7000ff);
-    background-size: 400% 400%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: rgbFlow 6s ease infinite;
+  50% {
+    background-position: 100% 50%;
   }
-   
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-rgb-text {
+  background: linear-gradient(270deg, #ff00c8, #00e0ff, #7000ff);
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rgbFlow 6s ease infinite;
+}
+
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fadeInScale {
+  animation: fadeInScale 0.6s ease-out forwards;
+}

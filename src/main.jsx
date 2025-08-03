@@ -19,7 +19,7 @@ import Reports from './components/Reports/Reports.jsx';
 import Contact from './components/Contact/Contact.jsx';
 import AboutUs from './components/AboutUs/AboutUs.jsx';
 import Services from './components/Services/Services.jsx';
-import CreateTask from './components/CreateTask/CreateTask.jsx';
+ 
 import LandingLayout from './components/LandingLayout/LandingLayout.jsx';
 import SignUp from './components/SignUp/SignUp.jsx';
 import Login from './components/Login/Login.jsx';
@@ -36,7 +36,8 @@ const router = createBrowserRouter([
 
       { path: "contact-us", Component: Contact },
       { path: "signup", Component: SignUp },
-      { path: "login", Component: Login }
+      { path: "login", Component: Login },
+      { path: "services", Component: Services }
     ],
   },
   {
@@ -45,7 +46,7 @@ const router = createBrowserRouter([
     errorElement: <ErrorPage></ErrorPage>,
     children: [
       { path: "about-us", Component: AboutUs },
-      { path: "services", Component: Services },
+      
 
       {
         path: "dashboard",
@@ -67,10 +68,7 @@ const router = createBrowserRouter([
         path: "reports",
         Component: Reports
       },
-      {
-        path: "tasks/create",
-        Component: CreateTask
-      }
+      
     ]
   }
 ]);
