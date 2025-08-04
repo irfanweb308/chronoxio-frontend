@@ -17,12 +17,13 @@ import Profile from './components/Profile/Profile.jsx';
 import Leaderboard from './components/Leaderboard/Leaderboard.jsx';
 import Reports from './components/Reports/Reports.jsx';
 import Contact from './components/Contact/Contact.jsx';
-import AboutUs from './components/AboutUs/AboutUs.jsx';
+
 import Services from './components/Services/Services.jsx';
  
 import LandingLayout from './components/LandingLayout/LandingLayout.jsx';
 import SignUp from './components/SignUp/SignUp.jsx';
 import Login from './components/Login/Login.jsx';
+import PublicAboutUs from './components/PublicAboutUs/PublicAboutUs.jsx';
 
 const router = createBrowserRouter([
 
@@ -37,6 +38,7 @@ const router = createBrowserRouter([
       { path: "contact-us", Component: Contact },
       { path: "signup", Component: SignUp },
       { path: "login", Component: Login },
+      {path: "about-us", Component: PublicAboutUs },
       { path: "services", Component: Services }
     ],
   },
@@ -45,7 +47,7 @@ const router = createBrowserRouter([
     Component: Root,
     errorElement: <ErrorPage></ErrorPage>,
     children: [
-      { path: "about-us", Component: AboutUs },
+      
       
 
       {

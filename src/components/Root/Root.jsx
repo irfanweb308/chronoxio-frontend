@@ -8,7 +8,7 @@ const Root = () => {
     return (
         <div id="outer-container" className="relative min-h-screen flex">
             <Sidebar />  
-            <div className="flex flex-col flex-1 ">
+            <div id='page-wrap' className="flex flex-col flex-1 ">
                 <NavBar />
                 <main id="page-wrap" className=" flex-1 p-6 overflow-y-auto">
                     <Outlet />

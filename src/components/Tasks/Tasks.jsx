@@ -1,26 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 const Tasks = () => {
     const [showModal, setShowModal] = useState(false);
     const [tasks, setTasks] = useState([]);
     const [activeTimers, setActiveTimers] = useState({});
+    const [pausedTimers, setPausedTimers] = useState({});
+    const [remainingTimes, setRemainingTimes] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitSuccess, setSubmitSuccess] = useState(false);
 
-    const convertToSeconds = (value, type) => {
-        const timeMap = {
-            minute: 60,
-            hour: 3600,
-            day: 86400,
-            week: 604800,
-            month: 2592000,
-            year: 31536000
-        };
-        return value * (timeMap[type] || 60);
-    };
+    const intervalsRef = useRef({});
 
-    const formatTime = (seconds, dueType) => {
+    const formatTime = (seconds) => {
         const units = [
             { label: 'y', seconds: 31536000 },
-            { label: 'm', seconds: 2592000 },
+            { label: 'mo', seconds: 2592000 },
             { label: 'w', seconds: 604800 },
             { label: 'd', seconds: 86400 },
             { label: 'h', seconds: 3600 },
@@ -28,52 +22,70 @@ const Tasks = () => {
             { label: 's', seconds: 1 },
         ];
 
-        const startIndex = {
-            year: 0,
-            month: 1,
-            week: 2,
-            day: 3,
-            hour: 4,
-            minute: 5,
-        }[dueType];
-
         const parts = [];
 
-        for (let i = startIndex; i < units.length; i++) {
-            const value = Math.floor(seconds / units[i].seconds);
-            seconds %= units[i].seconds;
-            parts.push(`${value}${units[i].label}`);
+        for (let unit of units) {
+            const value = Math.floor(seconds / unit.seconds);
+            if (value > 0 || parts.length > 0 || unit.label === 's') {
+                parts.push(`${value}${unit.label}`);
+                seconds %= unit.seconds;
+            }
         }
 
         return parts.join(' ');
     };
 
-    const handleStartCountdown = (taskId, dueValue, dueType) => {
-        if (activeTimers[taskId]) return; // already started
+    const handleStartCountdown = (taskId, endTime, remainingSecondsOverride = null) => {
+        if (activeTimers[taskId] !== undefined) return;
 
-        const totalSeconds = convertToSeconds(dueValue, dueType);
-        let remaining = totalSeconds;
+        const due = remainingSecondsOverride !== null
+            ? Date.now() + remainingSecondsOverride * 1000
+            : new Date(endTime).getTime();
 
-        setActiveTimers(prev => ({ ...prev, [taskId]: remaining }));
+        const updateTime = () => {
+            const now = Date.now();
+            const remaining = Math.max(0, Math.floor((due - now) / 1000));
 
-        const intervalId = setInterval(() => {
             setActiveTimers(prev => {
-                if (prev[taskId] <= 1) {
-                    clearInterval(intervalId);
+                if (remaining <= 0) {
+                    clearInterval(intervalsRef.current[taskId]);
+                    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
                     const updated = { ...prev };
                     delete updated[taskId];
                     return updated;
                 }
-                return { ...prev, [taskId]: prev[taskId] - 1 };
+                return { ...prev, [taskId]: remaining };
             });
-        }, 1000);
+        };
+
+        updateTime();
+        intervalsRef.current[taskId] = setInterval(updateTime, 1000);
     };
+
+    const handleTogglePause = (taskId) => {
+        const isNowPaused = !pausedTimers[taskId];
+        setPausedTimers(prev => ({ ...prev, [taskId]: isNowPaused }));
+
+        if (isNowPaused) {
+            clearInterval(intervalsRef.current[taskId]);
+            setRemainingTimes(prev => ({ ...prev, [taskId]: activeTimers[taskId] }));
+        } else {
+            const remaining = remainingTimes[taskId];
+            handleStartCountdown(taskId, null, remaining);
+        }
+    };
+
+    useEffect(() => {
+        return () => {
+            Object.values(intervalsRef.current).forEach(clearInterval);
+        };
+    }, []);
 
     const [formData, setFormData] = useState({
         taskName: '',
         category: '',
-        dueValue: '',
-        dueType: 'minute',
+        startTime: '',
+        endTime: '',
         priority: '',
     });
 
@@ -81,150 +93,197 @@ const Tasks = () => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
-    const handleCreateTask = () => {
-        setShowModal(true);
-    };
-
     const handleSubmit = (e) => {
         e.preventDefault();
-        const newTask = {
-            id: Date.now(),
-            ...formData
-        };
+        setIsSubmitting(true);
+        setSubmitSuccess(false);
 
-        setTasks(prev => [...prev, newTask]);
-        setFormData({ taskName: '', category: '', dueValue: '', dueType: 'minute', priority: '' });
-        setShowModal(false);
+        setTimeout(() => {
+            const newTask = {
+                id: Date.now(),
+                ...formData,
+            };
+            setTasks(prev => [...prev, newTask]);
+            setFormData({ taskName: '', category: '', startTime: '', endTime: '', priority: '' });
+            setIsSubmitting(false);
+            setSubmitSuccess(true);
+
+            setTimeout(() => {
+                setShowModal(false);
+                setSubmitSuccess(false);
+            }, 1000);
+        }, 2000);
+    };
+
+    const bgColor = (priority) => {
+        switch (priority) {
+            case 'High': return 'bg-red-100 text-red-900';
+            case 'Medium': return 'bg-yellow-100 text-yellow-900';
+            case 'Low': return 'bg-green-100 text-green-900';
+            default: return 'bg-gray-100 text-gray-900';
+        }
+    };
+
+    const badgeColor = (priority) => {
+        return priority === 'High'
+            ? 'bg-red-100 text-red-800'
+            : priority === 'Medium'
+                ? 'bg-yellow-100 text-yellow-800'
+                : 'bg-green-100 text-green-800';
     };
 
     return (
         <div className="p-6">
-            <h2 className="text-2xl font-semibold mb-6">Tasks</h2>
+            <h2 className="text-3xl font-bold mb-6">📋 My Tasks</h2>
 
             <button
-                onClick={handleCreateTask}
-                className="btn btn-outline btn-accent text-2xl hover:text-black"
+                onClick={() => setShowModal(true)}
+                className="btn btn-outline btn-accent text-lg mb-8"
             >
                 + New Task
             </button>
 
             {showModal && (
                 <div className="fixed inset-0 bg-opacity-70 backdrop-blur-md flex items-center justify-center z-50">
-                    <div className="border border-blue-200 bg-gradient-to-r from-purple-50 to-purple-100 bg-opacity-80 backdrop-blur-md p-8 rounded-2xl w-full max-w-xl shadow-lg animate-fadeInScale">
-                        <h3 className="text-xl font-bold mb-4">New Task</h3>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <input
-                                type="text"
-                                name="taskName"
-                                placeholder="Task Name"
-                                value={formData.taskName}
-                                onChange={handleChange}
-                                className="input input-bordered w-full"
-                                required
-                            />
-
-                            <select
-                                name="category"
-                                value={formData.category}
-                                onChange={handleChange}
-                                className="select select-bordered w-full"
-                                required
-                            >
-                                <option value="">Select category</option>
-                                <option>Self Improvement</option>
-                                <option>Workout</option>
-                                <option>Extra Curricular</option>
-                                <option>Others</option>
-                            </select>
-
-                            <div className="flex gap-4">
+                    <div className="bg-white p-8 rounded-xl w-full max-w-xl shadow-2xl">
+                        <h3 className="text-xl font-bold mb-4">Create New Task</h3>
+                        {isSubmitting || submitSuccess ? (
+                            <div className="flex flex-col items-center justify-center p-8">
+                                {submitSuccess ? (
+                                    <svg className="w-16 h-16 text-green-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                ) : (
+                                    <span className="loading loading-spinner loading-lg text-blue-600"></span>
+                                )}
+                                <p className="mt-4 text-lg">{submitSuccess ? "Task Added!" : "Adding task..."}</p>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleSubmit} className="space-y-4">
                                 <input
-                                    type="number"
-                                    name="dueValue"
-                                    placeholder="Due"
-                                    value={formData.dueValue}
+                                    type="text"
+                                    name="taskName"
+                                    placeholder="Task Name"
+                                    value={formData.taskName}
                                     onChange={handleChange}
-                                    className="input input-bordered w-1/2"
+                                    className="input input-bordered w-full"
                                     required
                                 />
                                 <select
-                                    name="dueType"
-                                    value={formData.dueType}
+                                    name="category"
+                                    value={formData.category}
                                     onChange={handleChange}
-                                    className="select select-bordered w-1/2"
+                                    className="select select-bordered w-full"
+                                    required
                                 >
-                                    <option>minute</option>
-                                    <option>hour</option>
-                                    <option>day</option>
-                                    <option>week</option>
-                                    <option>month</option>
-                                    <option>year</option>
+                                    <option value="">Select category</option>
+                                    <option>Self Improvement</option>
+                                    <option>Workout</option>
+                                    <option>Extra Curricular</option>
+                                    <option>Others</option>
                                 </select>
-                            </div>
 
-                            <select
-                                name="priority"
-                                value={formData.priority}
-                                onChange={handleChange}
-                                className="select select-bordered w-full"
-                                required
-                            >
-                                <option value="">Select priority</option>
-                                <option>High</option>
-                                <option>Medium</option>
-                                <option>Low</option>
-                            </select>
+                                <div className="flex gap-4">
+                                    <input
+                                        type="datetime-local"
+                                        name="startTime"
+                                        value={formData.startTime}
+                                        onChange={handleChange}
+                                        className="input input-bordered w-1/2"
+                                        required
+                                    />
+                                    <input
+                                        type="datetime-local"
+                                        name="endTime"
+                                        value={formData.endTime}
+                                        onChange={handleChange}
+                                        className="input input-bordered w-1/2"
+                                        required
+                                    />
+                                </div>
 
-                            <div className="flex justify-end gap-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowModal(false)}
-                                    className="btn btn-ghost"
+                                <select
+                                    name="priority"
+                                    value={formData.priority}
+                                    onChange={handleChange}
+                                    className="select select-bordered w-full"
+                                    required
                                 >
-                                    Cancel
-                                </button>
-                                <button type="submit" className="btn btn-primary">
-                                    Add Task
-                                </button>
-                            </div>
-                        </form>
+                                    <option value="">Select priority</option>
+                                    <option>High</option>
+                                    <option>Medium</option>
+                                    <option>Low</option>
+                                </select>
+                                <div className="flex justify-end gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowModal(false)}
+                                        className="btn btn-ghost"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button type="submit" className="btn btn-primary">
+                                        Add Task
+                                    </button>
+                                </div>
+                            </form>
+                        )}
                     </div>
                 </div>
             )}
 
-            <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...tasks].sort((a, b) => {
-                    const priorityOrder = { High: 1, Medium: 2, Low: 3 };
-                    return priorityOrder[a.priority] - priorityOrder[b.priority];
-                }).map((task) => (
-                    <div
-                        key={task.id}
-                        className={`p-4 rounded-lg shadow-lg transition ${task.priority === 'High'
-                                ? 'shadow-red-400'
-                                : task.priority === 'Medium'
-                                    ? 'shadow-yellow-400'
-                                    : 'shadow-green-400'
-                            }`}
-                    >
-                        <h3 className="text-2xl font-bold mb-3 text-blue-700">{task.taskName}</h3>
-                        <p className="font-bold text-gray-600">Category: {task.category}</p>
-                        <p className="font-bold text-gray-600">Due in: {task.dueValue} {task.dueType}</p>
-                        <p className="font-bold text-gray-600">Priority: {task.priority}</p>
+            <div className="w-full px-4">
+                {[...tasks]
+                    .sort((a, b) => {
+                        const priorityOrder = { High: 1, Medium: 2, Low: 3 };
+                        return priorityOrder[a.priority] - priorityOrder[b.priority];
+                    })
+                    .map((task) => (
+                        <div
+                            key={task.id}
+                            className={`relative w-full rounded-3xl p-6 mb-7 shadow-lg flex justify-between items-center transition-transform duration-200 hover:-translate-y-1 ${bgColor(task.priority)}`}
+                        >
+                            <div className="flex flex-col gap-2 w-full max-w-[70%]">
+                                <h3 className="text-xl font-bold">{task.taskName}</h3>
+                                <p className="text-sm uppercase tracking-wide opacity-70">{task.category}</p>
+                                <div className="flex gap-6 text-sm mt-2 flex-wrap">
+                                    <div className="flex items-center gap-1">
+                                        🕒 <span className="font-medium">Start: {new Date(task.startTime).toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        ⌛ <span className="font-medium">End: {new Date(task.endTime).toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        🔥 <span className="capitalize">Priority: {task.priority}</span>
+                                    </div>
+                                </div>
+                            </div>
 
-                        {activeTimers[task.id] !== undefined ? (
-                            <p className="mt-2 text-lg font-bold text-purple-700">
-                                ⏳ Remaining: {formatTime(activeTimers[task.id], task.dueType)}
-                            </p>
-                        ) : (
-                            <button
-                                className="mt-4 btn btn-sm btn-accent"
-                                onClick={() => handleStartCountdown(task.id, task.dueValue, task.dueType)}
-                            >
-                                ▶️ Start
-                            </button>
-                        )}
-                    </div>
-                ))}
+                            <div className="flex flex-col items-end gap-2">
+                                <div
+                                    className={`text-xl font-semibold px-5 py-2.5 rounded-full whitespace-nowrap cursor-pointer shadow-lg ring-1 ring-inset ring-white/10 ${badgeColor(task.priority)}`}
+                                    onClick={() => {
+                                        if (activeTimers[task.id] === undefined) {
+                                            handleStartCountdown(task.id, task.endTime);
+                                        }
+                                    }}
+                                >
+                                    {activeTimers[task.id] !== undefined
+                                        ? formatTime(activeTimers[task.id])
+                                        : "⏱ Ready"}
+                                </div>
+
+                                {activeTimers[task.id] !== undefined && (
+                                    <button
+                                        onClick={() => handleTogglePause(task.id)}
+                                        className="text-xl  text-blue-600 border border-blue-600 px-4 py-2 rounded-full hover:bg-blue-50 transition-colors"
+                                    >
+                                        {pausedTimers[task.id] ? "▶ Resume" : "⏸ Pause"}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ))}
             </div>
         </div>
     );

@@ -22,7 +22,7 @@ const NavBar = () => {
                         className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
                     >
                         <li><NavLink to="dashboard">Home</NavLink></li>
-                        <li><NavLink to="about-us">About us</NavLink></li>
+                        
                         <li><NavLink to="contact-us">Contact us</NavLink></li>
                     </ul>
                 </div>
@@ -32,7 +32,7 @@ const NavBar = () => {
             <div className="navbar-center hidden lg:flex">
                 <ul className="menu menu-horizontal px-1 gap-7 text-black font-bold text-lg">
                     <li><NavLink to="dashboard">Home</NavLink></li>
-                    <li><NavLink to="about-us">About us</NavLink></li>
+                    
                     <li><NavLink to="contact-us">Contact us</NavLink></li>
                 </ul>
             </div>

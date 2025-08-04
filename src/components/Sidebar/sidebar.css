@@ -1,5 +1,5 @@
 nav a.active {
-    background: linear-gradient(to right, #c9d0dc, #b8b1b1);
+    background: linear-gradient(to right, #005dfe, #557df4);
     color: black;
     padding: 8px 16px;
     border-radius: 8px;
@@ -39,7 +39,7 @@ nav a.active {
   height: 100%;
 }
 .bm-menu {
-  background: linear-gradient(to right, #3d5d90, #8b5cf6);
+  background: linear-gradient(to right, #909fdc, #ad9bd6);
   padding: 2.5em 1.5em 0;
   font-size: 1.15rem;
 }

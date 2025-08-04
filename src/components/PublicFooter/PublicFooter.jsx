@@ -1,54 +1,144 @@
-import React from 'react';
+import { useState } from "react";
+import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from "react-icons/fa";
+import { Link } from "react-router";
 
-const PublicFooter = () => {
-    return (
-        <footer className="footer footer-horizontal footer-center bg-base-200 text-base-content rounded p-10">
-            <nav className="grid grid-flow-col gap-4">
-                <a className="link link-hover">About us</a>
-                <a className="link link-hover">Contact</a>
-            </nav>
-            <nav>
-                <div className="grid grid-flow-col gap-4">
-                    <a>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            className="fill-current">
-                            <path
-                                d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"></path>
-                        </svg>
-                    </a>
-                    <a>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            className="fill-current">
-                            <path
-                                d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"></path>
-                        </svg>
-                    </a>
-                    <a>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            className="fill-current">
-                            <path
-                                d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"></path>
-                        </svg>
-                    </a>
-                </div>
-            </nav>
-            <aside>
-                <p>Copyright © {new Date().getFullYear()} - All right reserved by Chronoxio</p>
-            </aside>
-        </footer>
-    );
+const Footer = () => {
+  const [email, setEmail] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  const handleSubscribe = (e) => {
+    e.preventDefault();
+    if (email) {
+      setSuccessMessage("Thank you for subscribing!");
+      setEmail("");
+    } else {
+      setSuccessMessage("Please enter a valid email address.");
+    }
+  };
+
+  return (
+    <footer className="bg-gray-950 pt-12 pb-4 relative overflow-hidden mt-auto">
+      {/* Decorative Gradient Background */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-900/10 to-transparent transform rotate-45" />
+
+      <div className="max-w-7xl mx-auto px-4 lg:px-0 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {/* Company Info */}
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-white">BookShop</h2>
+            <p className="text-sm text-gray-400">
+              Your one-stop destination for the best books. Discover, learn, and
+              grow with us.
+            </p>
+            <div className="flex space-x-4">
+              {[
+                {
+                  icon: <FaFacebook />,
+                  color: "hover:text-blue-500",
+                  href: "https://facebook.com",
+                },
+                {
+                  icon: <FaTwitter />,
+                  color: "hover:text-blue-400",
+                  href: "https://twitter.com",
+                },
+                {
+                  icon: <FaInstagram />,
+                  color: "hover:text-pink-500",
+                  href: "https://instagram.com",
+                },
+                {
+                  icon: <FaLinkedin />,
+                  color: "hover:text-blue-600",
+                  href: "https://linkedin.com",
+                },
+              ].map((item, index) => (
+                <a
+                  key={index}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`text-gray-400 ${item.color} transition duration-300 transform hover:scale-110`}
+                >
+                  <span className="text-2xl">{item.icon}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Links */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold text-white">Quick Links</h3>
+            <ul className="space-y-2">
+              {[
+                { text: "Home", to: "/" },
+                { text: "About Us", to: "/about" },
+                { text: "Books", to: "/books" },
+                { text: "Contact", to: "/contact" },
+              ].map((link, index) => (
+                <li key={index}>
+                  <Link
+                    to={link.to}
+                    className="text-sm text-gray-400 hover:text-blue-400 transition duration-300 hover:underline"
+                  >
+                    {link.text}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contact Info */}
+          <div className="space-y-2">
+            <h3 className="text-xl font-semibold text-white">Contact Us</h3>
+            {[
+              { text: "Email: support@bookshop.com" },
+              { text: "Phone: +123 456 7890" },
+              { text: "Address: 123 Book Street, Knowledge City" },
+            ].map((info, index) => (
+              <p
+                key={index}
+                className="text-sm text-gray-400 hover:text-blue-400 transition duration-300"
+              >
+                {info.text}
+              </p>
+            ))}
+          </div>
+
+          {/* Newsletter Subscription */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold text-white">Newsletter</h3>
+            <p className="text-sm text-gray-400">
+              Subscribe to our newsletter for the latest updates and offers.
+            </p>
+            <form className="flex space-x-2" onSubmit={handleSubscribe}>
+              <input
+                type="email"
+                placeholder="Your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-700"
+              />
+              <button
+                type="submit"
+                className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-blue-600 transition duration-300"
+              >
+                Subscribe
+              </button>
+            </form>
+            {successMessage && (
+              <p className="text-green-400 mt-2">{successMessage}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Copyright */}
+        <div className=" border-gray-700 pt-2 text-center text-sm text-gray-500">
+          © {new Date().getFullYear()} BookShop. All rights reserved.
+        </div>
+      </div>
+    </footer>
+  );
 };
 
-export default PublicFooter;
+export default Footer;

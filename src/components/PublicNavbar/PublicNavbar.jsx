@@ -11,6 +11,10 @@ const PublicNavBar = () => {
 
        
       <div className="space-x-6 flex items-center">
+        
+        <Link to="/about-us" className="text-gray-600 hover:text-blue-600">
+          About Us
+        </Link>
         <Link to="/services" className="text-gray-600 hover:text-blue-600">
           Services
         </Link>
