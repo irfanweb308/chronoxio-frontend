@@ -24,6 +24,7 @@ import LandingLayout from './components/LandingLayout/LandingLayout.jsx';
 import SignUp from './components/SignUp/SignUp.jsx';
 import Login from './components/Login/Login.jsx';
 import PublicAboutUs from './components/PublicAboutUs/PublicAboutUs.jsx';
+ 
 
 const router = createBrowserRouter([
 

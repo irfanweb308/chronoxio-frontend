@@ -1,9 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MdDeleteForever } from "react-icons/md";
+import { useOutletContext } from 'react-router';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 
 
-const Tasks = () => {
+const Tasks = ( ) => {
+
+    const { setReportData } = useOutletContext()
+
     const [showModal, setShowModal] = useState(false);
     const [tasks, setTasks] = useState([]);
     const [activeTimers, setActiveTimers] = useState({});
@@ -14,8 +20,82 @@ const Tasks = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitSuccess, setSubmitSuccess] = useState(false);
     const [completedCount, setCompletedCount] = useState(0);
-    
 
+    const notificationRef = useRef({});
+    const longTaskTimers = useRef({});
+
+    const generateReportData = () => {
+        return tasks.map(task => ({
+            id: task.id,
+            name: task.taskName,
+            category: task.category,
+            priority: task.priority,
+            startTime: task.startTime,
+            endTime: task.endTime,
+            status: completedTasks[task.id]
+                ? 'Completed'
+                : expiredTasks[task.id]
+                    ? 'Expired'
+                    : 'Pending',
+            duration: completedTasks[task.id]
+                ? new Date(task.endTime) - new Date(task.startTime) : null,
+
+            completedOn: completedTasks[task.id] ? new Date().toISOString() : null
+        }));
+    };
+
+    useEffect(() => {
+        if (setReportData) {
+            setReportData(generateReportData());
+        }
+    }, [tasks, completedTasks, expiredTasks]);
+
+    useEffect(() => {
+
+        return () => {
+            Object.values(intervalsRef.current).forEach(clearInterval);
+            Object.values(notificationRef.current).forEach(clearTimeout);
+            Object.values(longTaskTimers.current).forEach(clearTimeout);
+        };
+    }, []);
+
+
+    useEffect(() => {
+        const checkForUpcomingTasks = () => {
+            tasks.forEach(task => {
+                const taskId = task.id;
+                const now = new Date();
+                const startTime = new Date(task.startTime);
+                const timeUntilStart = startTime - now;
+
+
+                if (notificationRef.current[taskId]) {
+                    clearTimeout(notificationRef.current[taskId]);
+                    delete notificationRef.current[taskId];
+                }
+
+
+                if (timeUntilStart > 0 && timeUntilStart <= 5 * 60 * 1000) {
+                    notificationRef.current[taskId] = setTimeout(() => {
+                        toast.info(`"${task.taskName}" will start in 5 minutes. Get ready!`, {
+                            position: "top-right",
+                            autoClose: 5000,
+                            hideProgressBar: false,
+                            closeOnClick: true,
+                            pauseOnHover: true,
+                            draggable: true,
+                        });
+                    }, timeUntilStart - (5 *60* 1000));
+                }
+            });
+        };
+
+
+        checkForUpcomingTasks();
+        const interval = setInterval(checkForUpcomingTasks, 60 * 1000);
+
+        return () => clearInterval(interval);
+    }, [tasks]);
 
     const intervalsRef = useRef({});
 
@@ -46,11 +126,32 @@ const Tasks = () => {
     const handleStartCountdown = (taskId, endTime, remainingSecondsOverride = null) => {
         clearInterval(intervalsRef.current[taskId]);
 
+
+        if (longTaskTimers.current[taskId]) {
+            clearTimeout(longTaskTimers.current[taskId]);
+            delete longTaskTimers.current[taskId];
+        }
+
         const initialRemaining = remainingSecondsOverride !== null
             ? remainingSecondsOverride
             : Math.floor((new Date(endTime).getTime() - Date.now()) / 1000);
 
         setActiveTimers(prev => ({ ...prev, [taskId]: initialRemaining }));
+
+
+        longTaskTimers.current[taskId] = setTimeout(() => {
+            const task = tasks.find(t => t.id === taskId);
+            if (task && !pausedTimers[taskId] && !completedTasks[taskId]) {
+                toast.warning(`You've been working on "${task.taskName}" for 3 hours. Consider taking a short break!`, {
+                    position: "top-center",
+                    autoClose: 10000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                });
+            }
+        }, 3 * 60 * 60 * 1000);
 
         intervalsRef.current[taskId] = setInterval(() => {
             setActiveTimers(prev => {
@@ -62,10 +163,6 @@ const Tasks = () => {
                     const updated = { ...prev };
                     delete updated[taskId];
                     setExpiredTasks(e => ({ ...e, [taskId]: true }));
-
-                    
-
-                     
                 }
 
                 return { ...prev, [taskId]: newRemaining };
@@ -79,6 +176,11 @@ const Tasks = () => {
 
         if (isNowPaused) {
             clearInterval(intervalsRef.current[taskId]);
+
+            if (longTaskTimers.current[taskId]) {
+                clearTimeout(longTaskTimers.current[taskId]);
+                delete longTaskTimers.current[taskId];
+            }
             setRemainingTimes(prev => ({
                 ...prev,
                 [taskId]: activeTimers[taskId]
@@ -189,7 +291,7 @@ const Tasks = () => {
                 setShowModal(false);
                 setSubmitSuccess(false);
             }, 1000);
-        }, 2000);
+        }, 1000);
     };
 
     const bgColor = (priority) => {
@@ -210,13 +312,27 @@ const Tasks = () => {
     };
 
 
-    const totalCreated = tasks.length;
-    const pendingCount = Math.max(0, totalCreated - completedCount  );
+
+    const pendingCount = tasks.filter(
+        task => !completedTasks[task.id] && !expiredTasks[task.id]
+    ).length;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
+            <ToastContainer
+                position="top-center"
+
+                autoClose={7000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
             <div className="max-w-6xl mx-auto">
-                {/* Header Section */}
+
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
                     <div>
                         <h2 className="text-4xl font-bold text-gray-800 mb-2">📋 My Tasks</h2>
@@ -230,7 +346,7 @@ const Tasks = () => {
                     </button>
                 </div>
 
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                     <div className="bg-white p-6 rounded-2xl shadow-md border-l-4 border-green-500 transform hover:scale-[1.02] transition-transform">
                         <div className="flex items-center">
@@ -260,10 +376,10 @@ const Tasks = () => {
                         </div>
                     </div>
 
-                     
+
                 </div>
 
-                 
+
                 <div className="space-y-6">
                     {[...tasks].sort((a, b) => {
                         const priorityOrder = { High: 1, Medium: 2, Low: 3 };
@@ -373,9 +489,9 @@ const Tasks = () => {
                 </div>
             </div>
 
-             
+
             {showModal && (
-                <div className="fixed inset-0  bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white p-8 rounded-2xl w-full max-w-xl shadow-2xl border border-gray-100">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-2xl font-bold text-gray-800">Create New Task</h3>
@@ -446,27 +562,41 @@ const Tasks = () => {
                                         <label className="label">
                                             <span className="label-text font-medium">Start Time</span>
                                         </label>
-                                        <input
-                                            type="datetime-local"
-                                            name="startTime"
-                                            value={formData.startTime}
-                                            onChange={handleChange}
-                                            className="input input-bordered w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            required
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                type="datetime-local"
+                                                name="startTime"
+                                                value={formData.startTime}
+                                                onChange={handleChange}
+                                                className="input input-bordered w-full pl-10 pr-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                required
+                                            />
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="form-control">
                                         <label className="label">
                                             <span className="label-text font-medium">End Time</span>
                                         </label>
-                                        <input
-                                            type="datetime-local"
-                                            name="endTime"
-                                            value={formData.endTime}
-                                            onChange={handleChange}
-                                            className="input input-bordered w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            required
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                type="datetime-local"
+                                                name="endTime"
+                                                value={formData.endTime}
+                                                onChange={handleChange}
+                                                className="input input-bordered w-full pl-10 pr-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                required
+                                            />
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -474,18 +604,29 @@ const Tasks = () => {
                                     <label className="label">
                                         <span className="label-text font-medium">Priority</span>
                                     </label>
-                                    <select
-                                        name="priority"
-                                        value={formData.priority}
-                                        onChange={handleChange}
-                                        className="select select-bordered w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        required
-                                    >
-                                        <option value="">Select priority</option>
-                                        <option>High</option>
-                                        <option>Medium</option>
-                                        <option>Low</option>
-                                    </select>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({ ...prev, priority: 'High' }))}
+                                            className={`btn ${formData.priority === 'High' ? 'bg-red-100 text-red-800 border-red-300' : 'btn-ghost'}`}
+                                        >
+                                            High
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({ ...prev, priority: 'Medium' }))}
+                                            className={`btn ${formData.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' : 'btn-ghost'}`}
+                                        >
+                                            Medium
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({ ...prev, priority: 'Low' }))}
+                                            className={`btn ${formData.priority === 'Low' ? 'bg-green-100 text-green-800 border-green-300' : 'btn-ghost'}`}
+                                        >
+                                            Low
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="flex justify-end gap-4 pt-4">
