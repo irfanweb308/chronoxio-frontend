@@ -6,7 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 
 
-const Tasks = ( ) => {
+const Tasks = () => {
 
     const { setReportData } = useOutletContext()
 
@@ -20,6 +20,7 @@ const Tasks = ( ) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitSuccess, setSubmitSuccess] = useState(false);
     const [completedCount, setCompletedCount] = useState(0);
+    const [taskStartTimes, setTaskStartTimes] = useState({});
 
     const notificationRef = useRef({});
     const longTaskTimers = useRef({});
@@ -39,7 +40,7 @@ const Tasks = ( ) => {
                     : 'Pending',
             duration: completedTasks[task.id]
                 ? new Date(task.endTime) - new Date(task.startTime) : null,
-
+            completionTime: task.completionTime || null,  
             completedOn: completedTasks[task.id] ? new Date().toISOString() : null
         }));
     };
@@ -85,7 +86,7 @@ const Tasks = ( ) => {
                             pauseOnHover: true,
                             draggable: true,
                         });
-                    }, timeUntilStart - (5 *60* 1000));
+                    }, timeUntilStart - (5 * 60 * 1000));
                 }
             });
         };
@@ -137,6 +138,7 @@ const Tasks = ( ) => {
             : Math.floor((new Date(endTime).getTime() - Date.now()) / 1000);
 
         setActiveTimers(prev => ({ ...prev, [taskId]: initialRemaining }));
+        setTaskStartTimes(prev => ({ ...prev, [taskId]: Date.now() }));
 
 
         longTaskTimers.current[taskId] = setTimeout(() => {
@@ -155,16 +157,13 @@ const Tasks = ( ) => {
 
         intervalsRef.current[taskId] = setInterval(() => {
             setActiveTimers(prev => {
-                const currentRemaining = prev[taskId] || 0;
-                const newRemaining = currentRemaining - 1;
-
+                const newRemaining = (prev[taskId] || 0) - 1;
                 if (newRemaining <= 0) {
                     clearInterval(intervalsRef.current[taskId]);
-                    const updated = { ...prev };
-                    delete updated[taskId];
+                    const { [taskId]: _, ...rest } = prev;
                     setExpiredTasks(e => ({ ...e, [taskId]: true }));
+                    return rest;
                 }
-
                 return { ...prev, [taskId]: newRemaining };
             });
         }, 1000);
@@ -195,12 +194,25 @@ const Tasks = ( ) => {
 
     const handleCompleteTask = (taskId) => {
         clearInterval(intervalsRef.current[taskId]);
+        const completionTimeInSeconds = Math.floor((Date.now() - (taskStartTimes[taskId] || new Date(tasks.find(t => t.id === taskId).startTime).getTime())) / 1000);
+        
+        // Update the task with completion time
+        setTasks(prev => prev.map(task => 
+            task.id === taskId 
+                ? { ...task, completionTime: completionTimeInSeconds } 
+                : task
+        ));
+
+
+
+
+
+
         setCompletedTasks(prev => ({ ...prev, [taskId]: true }));
         setCompletedCount(prev => prev + 1);
         setActiveTimers(prev => {
-            const updated = { ...prev };
-            delete updated[taskId];
-            return updated;
+            const { [taskId]: _, ...rest } = prev;
+            return rest;
         });
     };
 
@@ -292,7 +304,12 @@ const Tasks = ( ) => {
                 setSubmitSuccess(false);
             }, 1000);
         }, 1000);
+
+
     };
+    console.log(tasks);
+
+
 
     const bgColor = (priority) => {
         switch (priority) {
