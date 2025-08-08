@@ -1,14 +1,13 @@
 import React from 'react';
 import { FcComboChart } from "react-icons/fc";
 import { useOutletContext } from 'react-router';
-import { BarChart, Bar,   AreaChart, XAxis, YAxis, CartesianGrid, Tooltip, Area } from 'recharts';
-
+import { BarChart, Bar, AreaChart, XAxis, YAxis, CartesianGrid, Tooltip, Area } from 'recharts';
 
 const Reports = () => {
-    const { reportData }=useOutletContext()
-     const processChartData = () => {
+  const { reportData } = useOutletContext();
+
+  const processChartData = () => {
     const dailyData = {};
-    
     reportData.forEach(task => {
       const date = new Date(task.startTime).toLocaleDateString();
       if (!dailyData[date]) {
@@ -20,7 +19,6 @@ const Reports = () => {
           total: 0
         };
       }
-      
       dailyData[date].total++;
       if (task.status === 'Completed') dailyData[date].completed++;
       else if (task.status === 'Pending') dailyData[date].pending++;
@@ -31,86 +29,64 @@ const Reports = () => {
   };
 
   const processPriorityData = () => {
-    const priorityCount = {
-      High: 0,
-      Medium: 0,
-      Low: 0
-    };
-
+    const priorityCount = { High: 0, Medium: 0, Low: 0 };
     reportData.forEach(task => {
       priorityCount[task.priority]++;
     });
 
-    return Object.entries(priorityCount).map(([name, value]) => ({
-      name,
-      value
-    }));
+    return Object.entries(priorityCount).map(([name, value]) => ({ name, value }));
   };
 
   const chartData = processChartData();
   const priorityData = processPriorityData();
 
-  // Calculate summary stats
   const totalTasks = reportData.length;
   const completedTasks = reportData.filter(t => t.status === 'Completed').length;
   const overdueTasks = reportData.filter(t => t.status === 'Expired').length;
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
-       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl shadow hover:shadow-md transition">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Tasks</h3>
-          <p className="text-3xl font-bold text-indigo-600">{totalTasks}</p>
+    <div className="bg-gradient-to-br from-gray-100 to-gray-200 min-h-screen p-8">
+      {/* Header */}
+      <div className="flex items-center mb-10">
+        <FcComboChart className="text-4xl mr-3" />
+        <h1 className="text-3xl font-bold text-gray-800">Reports Dashboard</h1>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition">
+          <h3 className="text-md font-medium text-gray-600 mb-1">Total Tasks</h3>
+          <p className="text-4xl font-bold text-indigo-600">{totalTasks}</p>
         </div>
-        <div className="bg-white p-6 rounded-xl shadow hover:shadow-md transition">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Completed Tasks</h3>
-          <p className="text-3xl font-bold text-green-600">{completedTasks}</p>
+        <div className="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition">
+          <h3 className="text-md font-medium text-gray-600 mb-1">Completed Tasks</h3>
+          <p className="text-4xl font-bold text-green-600">{completedTasks}</p>
         </div>
-        <div className="bg-white p-6 rounded-xl shadow hover:shadow-md transition">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Overdue Tasks</h3>
-          <p className="text-3xl font-bold text-red-600">{overdueTasks}</p>
+        <div className="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition">
+          <h3 className="text-md font-medium text-gray-600 mb-1">Overdue Tasks</h3>
+          <p className="text-4xl font-bold text-red-500">{overdueTasks}</p>
         </div>
       </div>
 
-      {/* Task Trend Chart */}
-      <div className="bg-white p-6 rounded-xl shadow mb-8">
-        <h2 className="text-xl font-bold mb-4 text-gray-800">Task Completion Trend</h2>
-        <AreaChart width={900} height={300} data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
-          <YAxis />
-          <Tooltip />
-          <Area 
-            type="monotone" 
-            dataKey="completed" 
-            name="Completed" 
-            stackId="1" 
-            stroke="#82ca9d" 
-            fill="#82ca9d" 
-          />
-          <Area 
-            type="monotone" 
-            dataKey="pending" 
-            name="Pending" 
-            stackId="1" 
-            stroke="#ffc658" 
-            fill="#ffc658" 
-          />
-          <Area 
-            type="monotone" 
-            dataKey="expired" 
-            name="Expired" 
-            stackId="1" 
-            stroke="#ff6b6b" 
-            fill="#ff6b6b" 
-          />
-        </AreaChart>
+      {/* Task Completion Trend Chart */}
+      <div className="bg-white p-6 rounded-2xl shadow mb-10">
+        <h2 className="text-xl font-semibold text-gray-700 mb-4">Task Completion Trend</h2>
+        <div className="overflow-x-auto">
+          <AreaChart width={900} height={300} data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Area type="monotone" dataKey="completed" name="Completed" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
+            <Area type="monotone" dataKey="pending" name="Pending" stackId="1" stroke="#ffc658" fill="#ffc658" />
+            <Area type="monotone" dataKey="expired" name="Expired" stackId="1" stroke="#ff6b6b" fill="#ff6b6b" />
+          </AreaChart>
+        </div>
       </div>
 
-       
-      <div className="bg-white p-6 rounded-xl shadow mb-8">
-        <h2 className="text-xl font-bold mb-4 text-gray-800">Task Priority Distribution</h2>
+      {/* Task Priority Chart */}
+      <div className="bg-white p-6 rounded-2xl shadow mb-10">
+        <h2 className="text-xl font-semibold text-gray-700 mb-4">Task Priority Distribution</h2>
         <BarChart width={500} height={300} data={priorityData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
@@ -121,43 +97,41 @@ const Reports = () => {
       </div>
 
       {/* Recent Tasks Table */}
-      <div className="bg-white p-6 rounded-xl shadow overflow-x-auto">
-        <h2 className="text-xl font-bold mb-4 text-gray-800">Recent Tasks</h2>
-        <table className="table w-full">
-          <thead>
-            <tr className="text-left text-sm text-gray-500 border-b">
-              <th>Task</th>
-              <th>Category</th>
-              <th>Priority</th>
-              <th>Status</th>
-              <th>Duration</th>
+      <div className="bg-white p-6 rounded-2xl shadow overflow-x-auto">
+        <h2 className="text-xl font-semibold text-gray-700 mb-4">Recent Tasks</h2>
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-100 text-sm text-gray-600">
+            <tr>
+              <th className="px-4 py-2 text-left">Task</th>
+              <th className="px-4 py-2 text-left">Category</th>
+              <th className="px-4 py-2 text-left">Priority</th>
+              <th className="px-4 py-2 text-left">Status</th>
+              <th className="px-4 py-2 text-left">Duration</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="bg-white text-sm text-gray-700">
             {reportData.slice(0, 5).map(task => (
-              <tr key={task.id} className="hover">
-                <td>{task.name}</td>
-                <td>{task.category}</td>
-                <td>
-                  <span className={`badge ${
-                    task.priority === 'High' ? 'badge-error' :
-                    task.priority === 'Medium' ? 'badge-warning' : 'badge-success'
+              <tr key={task.id} className="border-t hover:bg-gray-50 transition">
+                <td className="px-4 py-2">{task.name}</td>
+                <td className="px-4 py-2">{task.category}</td>
+                <td className="px-4 py-2">
+                  <span className={`px-2 py-1 rounded-full text-white text-xs ${
+                    task.priority === 'High' ? 'bg-red-500' :
+                    task.priority === 'Medium' ? 'bg-yellow-500' : 'bg-green-500'
                   }`}>
                     {task.priority}
                   </span>
                 </td>
-                <td>
-                  <span className={`badge ${
-                    task.status === 'Completed' ? 'badge-success' :
-                    task.status === 'Expired' ? 'badge-error' : 'badge-warning'
+                <td className="px-4 py-2">
+                  <span className={`px-2 py-1 rounded-full text-white text-xs ${
+                    task.status === 'Completed' ? 'bg-green-600' :
+                    task.status === 'Expired' ? 'bg-red-600' : 'bg-yellow-600'
                   }`}>
                     {task.status}
                   </span>
                 </td>
-                <td>
-                  {task.duration ? 
-                    `${Math.round(task.duration / (1000 * 60 * 60))}h` : 
-                    'N/A'}
+                <td className="px-4 py-2">
+                  {task.duration ? `${Math.round(task.duration / (1000 * 60 * 60))}h` : 'N/A'}
                 </td>
               </tr>
             ))}
