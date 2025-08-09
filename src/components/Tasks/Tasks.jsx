@@ -8,9 +8,9 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const Tasks = () => {
 
-    const { setReportData } = useOutletContext()
+    const { setReportData, showTaskModal, setShowTaskModal } = useOutletContext()
 
-    const [showModal, setShowModal] = useState(false);
+
     const [tasks, setTasks] = useState([]);
     const [activeTimers, setActiveTimers] = useState({});
     const [pausedTimers, setPausedTimers] = useState({});
@@ -21,28 +21,33 @@ const Tasks = () => {
     const [submitSuccess, setSubmitSuccess] = useState(false);
     const [completedCount, setCompletedCount] = useState(0);
     const [taskStartTimes, setTaskStartTimes] = useState({});
+    const [activities, setActivities] = useState([]);
 
     const notificationRef = useRef({});
     const longTaskTimers = useRef({});
 
     const generateReportData = () => {
-        return tasks.map(task => ({
-            id: task.id,
-            name: task.taskName,
-            category: task.category,
-            priority: task.priority,
-            startTime: task.startTime,
-            endTime: task.endTime,
-            status: completedTasks[task.id]
-                ? 'Completed'
-                : expiredTasks[task.id]
-                    ? 'Expired'
-                    : 'Pending',
-            duration: completedTasks[task.id]
-                ? new Date(task.endTime) - new Date(task.startTime) : null,
-            completionTime: task.completionTime || null,  
-            completedOn: completedTasks[task.id] ? new Date().toISOString() : null
-        }));
+        return {
+            tasks: tasks.map(task => ({
+                id: task.id,
+                name: task.taskName,
+                category: task.category,
+                priority: task.priority,
+                startTime: task.startTime,
+                endTime: task.endTime,
+                status: completedTasks[task.id]
+                    ? 'Completed'
+                    : expiredTasks[task.id]
+                        ? 'Expired'
+                        : 'Pending',
+                duration: completedTasks[task.id]
+                    ? new Date(task.endTime) - new Date(task.startTime)
+                    : null,
+                completionTime: task.completionTime || null,
+                completedOn: completedTasks[task.id] ? new Date().toISOString() : null
+            })),
+            activities: activities
+        };
     };
 
     useEffect(() => {
@@ -195,11 +200,11 @@ const Tasks = () => {
     const handleCompleteTask = (taskId) => {
         clearInterval(intervalsRef.current[taskId]);
         const completionTimeInSeconds = Math.floor((Date.now() - (taskStartTimes[taskId] || new Date(tasks.find(t => t.id === taskId).startTime).getTime())) / 1000);
-        
-        // Update the task with completion time
-        setTasks(prev => prev.map(task => 
-            task.id === taskId 
-                ? { ...task, completionTime: completionTimeInSeconds } 
+
+
+        setTasks(prev => prev.map(task =>
+            task.id === taskId
+                ? { ...task, completionTime: completionTimeInSeconds }
                 : task
         ));
 
@@ -214,6 +219,15 @@ const Tasks = () => {
             const { [taskId]: _, ...rest } = prev;
             return rest;
         });
+
+        const completedActivity = {
+            id: taskId,
+            taskName: tasks.find(t => t.id === taskId).taskName,
+            priority: tasks.find(t => t.id === taskId).priority,
+            action: 'Completed',
+            timestamp: Date.now()
+        };
+        setActivities(prev => [completedActivity, ...prev].slice(0, 5));
     };
 
     const handleDeleteTask = (taskId) => {
@@ -294,18 +308,31 @@ const Tasks = () => {
                 id: Date.now(),
                 ...formData,
             };
+
+           
             setTasks(prev => [...prev, newTask]);
             setFormData({ taskName: '', category: '', startTime: '', endTime: '', priority: '' });
+
+             
+            const newActivity = {
+                id: newTask.id,
+                taskName: newTask.taskName,
+                priority: newTask.priority,
+                action: 'Created',
+                timestamp: Date.now()
+            };
+
+             
+            setActivities(prev => [newActivity, ...prev].slice(0, 5));
+
             setIsSubmitting(false);
             setSubmitSuccess(true);
 
             setTimeout(() => {
-                setShowModal(false);
+                setShowTaskModal(false);
                 setSubmitSuccess(false);
             }, 1000);
         }, 1000);
-
-
     };
     console.log(tasks);
 
@@ -356,7 +383,7 @@ const Tasks = () => {
                         <p className="text-gray-600">Manage your daily tasks and boost productivity</p>
                     </div>
                     <button
-                        onClick={() => setShowModal(true)}
+                        onClick={() => setShowTaskModal(true)}
                         className="btn btn-primary text-lg mt-4 md:mt-0 bg-gradient-to-r from-purple-500 to-blue-500 border-none text-white hover:from-purple-600 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all"
                     >
                         + New Task
@@ -507,13 +534,13 @@ const Tasks = () => {
             </div>
 
 
-            {showModal && (
+            {showTaskModal && (
                 <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white p-8 rounded-2xl w-full max-w-xl shadow-2xl border border-gray-100">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-2xl font-bold text-gray-800">Create New Task</h3>
                             <button
-                                onClick={() => setShowModal(false)}
+                                onClick={() => setShowTaskModal(false)}
                                 className="btn btn-ghost btn-circle"
                             >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -649,7 +676,7 @@ const Tasks = () => {
                                 <div className="flex justify-end gap-4 pt-4">
                                     <button
                                         type="button"
-                                        onClick={() => setShowModal(false)}
+                                        onClick={() => setShowTaskModal(false)}
                                         className="btn btn-ghost hover:bg-gray-100"
                                     >
                                         Cancel
