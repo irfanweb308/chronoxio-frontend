@@ -309,11 +309,11 @@ const Tasks = () => {
                 ...formData,
             };
 
-           
+
             setTasks(prev => [...prev, newTask]);
             setFormData({ taskName: '', category: '', startTime: '', endTime: '', priority: '' });
 
-             
+
             const newActivity = {
                 id: newTask.id,
                 taskName: newTask.taskName,
@@ -322,7 +322,7 @@ const Tasks = () => {
                 timestamp: Date.now()
             };
 
-             
+
             setActivities(prev => [newActivity, ...prev].slice(0, 5));
 
             setIsSubmitting(false);

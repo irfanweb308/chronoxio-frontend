@@ -1,48 +1,47 @@
-import React from 'react';
+
 import { FcComboChart } from "react-icons/fc";
 import { useOutletContext } from 'react-router';
 import { BarChart, Bar, AreaChart, XAxis, YAxis, CartesianGrid, Tooltip, Area } from 'recharts';
 
 const Reports = () => {
   const { reportData } = useOutletContext();
+  const safeReportData = Array.isArray(reportData) ? reportData : [];
 
-  const processChartData = () => {
+
+
+  const processChartData = (data) => {
+    if (!Array.isArray(data)) return [];
     const dailyData = {};
-    reportData.forEach(task => {
+    data.forEach(task => {
       const date = new Date(task.startTime).toLocaleDateString();
       if (!dailyData[date]) {
-        dailyData[date] = {
-          date,
-          completed: 0,
-          pending: 0,
-          expired: 0,
-          total: 0
-        };
+        dailyData[date] = { date, completed: 0, pending: 0, expired: 0, total: 0 };
       }
       dailyData[date].total++;
       if (task.status === 'Completed') dailyData[date].completed++;
       else if (task.status === 'Pending') dailyData[date].pending++;
       else dailyData[date].expired++;
     });
-
     return Object.values(dailyData).sort((a, b) => new Date(a.date) - new Date(b.date));
   };
 
-  const processPriorityData = () => {
+  const processPriorityData = (data) => {
+    if (!Array.isArray(data)) return [];
     const priorityCount = { High: 0, Medium: 0, Low: 0 };
-    reportData.forEach(task => {
+    data.forEach(task => {
       priorityCount[task.priority]++;
     });
-
     return Object.entries(priorityCount).map(([name, value]) => ({ name, value }));
   };
 
-  const chartData = processChartData();
-  const priorityData = processPriorityData();
+  const totalTasks = safeReportData.length;
+  const completedTasks = safeReportData.filter(t => t.status === 'Completed').length;
+  const overdueTasks = safeReportData.filter(t => t.status === 'Expired').length;
 
-  const totalTasks = reportData.length;
-  const completedTasks = reportData.filter(t => t.status === 'Completed').length;
-  const overdueTasks = reportData.filter(t => t.status === 'Expired').length;
+  const chartData = processChartData(safeReportData);
+  const priorityData = processPriorityData(safeReportData);
+
+
 
   return (
     <div className="bg-gradient-to-br from-gray-100 to-gray-200 min-h-screen p-8">
@@ -110,23 +109,21 @@ const Reports = () => {
             </tr>
           </thead>
           <tbody className="bg-white text-sm text-gray-700">
-            {reportData.slice(0, 5).map(task => (
+            {safeReportData.slice(0, 5).map(task => (
               <tr key={task.id} className="border-t hover:bg-gray-50 transition">
                 <td className="px-4 py-2">{task.name}</td>
                 <td className="px-4 py-2">{task.category}</td>
                 <td className="px-4 py-2">
-                  <span className={`px-2 py-1 rounded-full text-white text-xs ${
-                    task.priority === 'High' ? 'bg-red-500' :
-                    task.priority === 'Medium' ? 'bg-yellow-500' : 'bg-green-500'
-                  }`}>
+                  <span className={`px-2 py-1 rounded-full text-white text-xs ${task.priority === 'High' ? 'bg-red-500' :
+                      task.priority === 'Medium' ? 'bg-yellow-500' : 'bg-green-500'
+                    }`}>
                     {task.priority}
                   </span>
                 </td>
                 <td className="px-4 py-2">
-                  <span className={`px-2 py-1 rounded-full text-white text-xs ${
-                    task.status === 'Completed' ? 'bg-green-600' :
-                    task.status === 'Expired' ? 'bg-red-600' : 'bg-yellow-600'
-                  }`}>
+                  <span className={`px-2 py-1 rounded-full text-white text-xs ${task.status === 'Completed' ? 'bg-green-600' :
+                      task.status === 'Expired' ? 'bg-red-600' : 'bg-yellow-600'
+                    }`}>
                     {task.status}
                   </span>
                 </td>
